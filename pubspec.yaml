@@ -10,8 +10,11 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons:
-  redux:
+  rxdart:
   font_awesome_flutter:
+  firebase_auth:
+  firebase_storage:
+  firebase_database:
 
 dev_dependencies:
   flutter_test:

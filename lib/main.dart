@@ -19,11 +19,12 @@ class InstaApp extends StatelessWidget {
           appBarTheme: AppBarTheme(color: Colors.white),
           primaryColor: Color(0xfffafafa)),
       debugShowCheckedModeBanner: false,
-      routes: <String, WidgetBuilder>{
-        '/initial': (BuildContext context) => InitialScreen(),
-        '/login': (BuildContext context) => LoginScreen(),
-        '/dm': (BuildContext context) => MessagesScreen(),
-      },
+//      routes: <String, WidgetBuilder>{
+//        '/initial': (BuildContext context) => InitialScreen(),
+//        '/login': (BuildContext context) => LoginScreen(),
+//        '/sigup': (BuildContext context) => SignUpScreen(),
+//        '/dm': (BuildContext context) => MessagesScreen(),
+//      },
     );
   }
 }
