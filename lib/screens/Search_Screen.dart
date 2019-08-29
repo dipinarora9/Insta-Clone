@@ -1,3 +1,4 @@
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:insta_clone/bloc/content_bloc.dart';
 
@@ -20,27 +21,62 @@ class SearchScreen extends StatelessWidget {
                       labelText: 'username',
                       errorText: snapshot.error,
                     ),
-                    onChanged: (v){
-                      contentBlocPattern.queryAdded(v);
+                    onChanged: (v) {
                       contentBlocPattern.search(v);
                     },
                   ),
                 );
               }),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: 3,
-              itemBuilder: (BuildContext context, int index) {
-                return StreamBuilder<List>(
-                    stream: contentBlocPattern.users,
-                    builder: (context, snapshot) {
-                      debugPrint(snapshot.data.toString());
-                      return ListTile(
-                        title: Text('titile'),
-                      );
-                    });
+          Expanded(
+            child: StreamBuilder<List<dynamic>>(
+              stream: contentBlocPattern.fetchedData,
+              builder: (context, snapshot) {
+                return Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: snapshot.hasData ?? false
+                        ? snapshot.data[0].values.toList().length
+                        : 1,
+                    itemBuilder: (BuildContext context, int index) {
+                      if (snapshot.hasData ?? false)
+                        return ListTile(
+                          title: Text(snapshot.data[0].values
+                              .toList()[index]['username']
+                              .toString()),
+                          subtitle: Text(snapshot.data[0].values
+                              .toList()[index]['name']
+                              .toString()),
+                          trailing: FlatButton(
+                            onPressed: () {
+                              contentBlocPattern.follow(
+                                  snapshot.data[0].keys.toList()[index],
+                                  snapshot.data[1].keys.toList().contains(
+                                          snapshot.data[0].keys.toList()[index])
+                                      ? false
+                                      : true);
+                            },
+                            child: Container(
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(snapshot.data[1].keys
+                                        .toList()
+                                        .contains(snapshot.data[0].keys
+                                            .toList()[index])
+                                    ? 'Following'
+                                    : 'Follow'),
+                              ),
+                              color: snapshot.data[1].keys.toList().contains(
+                                      snapshot.data[0].keys.toList()[index])
+                                  ? Colors.red.withOpacity(0.5)
+                                  : Colors.blue.withOpacity(0.5),
+                            ),
+                          ),
+                        );
+                      return Text('No query');
+                    },
+                  ),
+                );
               },
             ),
           ),
@@ -48,4 +84,6 @@ class SearchScreen extends StatelessWidget {
       ),
     );
   }
+
+
 }

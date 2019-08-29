@@ -214,7 +214,7 @@ class SignUpScreen extends StatelessWidget {
                         if (snapshot.hasData ?? false) {
                           bloc.signUp(snapshot.data[0], snapshot.data[1],
                               snapshot.data[2], snapshot.data[3]);
-                          if (bloc.signedUp) Navigator.of(context).pop();
+                          Navigator.of(context).pop();
 //                          signUp(bloc.email, bloc.password, bloc.username,
 //                              bloc.name, context);
                         }
