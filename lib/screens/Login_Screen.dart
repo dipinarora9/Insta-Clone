@@ -6,7 +6,7 @@ import 'package:insta_clone/screens/FeedScreen.dart';
 class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    LoginBloc bloc = BlocInheritedClass.of(context).loginBloc;
+    LoginBloc loginBlocPattern = BlocInheritedClass.of(context).loginBloc;
     return Scaffold(
       body: SingleChildScrollView(
         child: Container(
@@ -21,7 +21,7 @@ class LoginScreen extends StatelessWidget {
                 ),
               ),
               StreamBuilder<String>(
-                  stream: bloc.email,
+                  stream: loginBlocPattern.email,
                   builder: (context, snapshot) {
                     return Padding(
                       padding: const EdgeInsets.all(8.0),
@@ -30,12 +30,12 @@ class LoginScreen extends StatelessWidget {
                           labelText: 'Email',
                           errorText: snapshot.error,
                         ),
-                        onChanged: bloc.emailChanged,
+                        onChanged: loginBlocPattern.emailChanged,
                       ),
                     );
                   }),
               StreamBuilder<String>(
-                  stream: bloc.password,
+                  stream: loginBlocPattern.password,
                   builder: (context, snapshot) {
                     return Padding(
                       padding: const EdgeInsets.all(8.0),
@@ -45,12 +45,12 @@ class LoginScreen extends StatelessWidget {
                           errorText: snapshot.error,
                         ),
                         obscureText: true,
-                        onChanged: bloc.passwordChanged,
+                        onChanged: loginBlocPattern.passwordChanged,
                       ),
                     );
                   }),
               StreamBuilder<String>(
-                  stream: bloc.error,
+                  stream: loginBlocPattern.error,
                   builder: (context, snapshot) {
                     if (snapshot.hasError)
                       return Padding(
@@ -61,7 +61,7 @@ class LoginScreen extends StatelessWidget {
                     }
                   }),
               StreamBuilder<List<String>>(
-                stream: bloc.verifiedUser,
+                stream: loginBlocPattern.verifiedUser,
                 builder: (context, snapshot) {
                   return Padding(
                     padding: const EdgeInsets.all(8.0),
@@ -70,7 +70,8 @@ class LoginScreen extends StatelessWidget {
                       color: snapshot.hasData ? Colors.blue : Colors.grey,
                       onPressed: () {
                         if (snapshot.hasData ?? false) {
-                          bloc.signIn(snapshot.data[0],snapshot.data[1],context);
+                          loginBlocPattern.signIn(
+                              snapshot.data[0], snapshot.data[1], context);
                         }
                       },
                     ),
@@ -211,9 +212,9 @@ class SignUpScreen extends StatelessWidget {
                       color: snapshot.hasData ? Colors.blue : Colors.grey,
                       onPressed: () {
                         if (snapshot.hasData ?? false) {
-
-                          bloc.signUp(snapshot.data[0], snapshot.data[1], snapshot.data[2], snapshot.data[3]);
-                          if(bloc.signedUp)Navigator.of(context).pop();
+                          bloc.signUp(snapshot.data[0], snapshot.data[1],
+                              snapshot.data[2], snapshot.data[3]);
+                          if (bloc.signedUp) Navigator.of(context).pop();
 //                          signUp(bloc.email, bloc.password, bloc.username,
 //                              bloc.name, context);
                         }

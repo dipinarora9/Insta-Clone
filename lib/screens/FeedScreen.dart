@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:insta_clone/bloc/content_bloc.dart';
+
+import '../main.dart';
 
 class FeedScreen extends StatelessWidget {
   final List<List<dynamic>> data = [
@@ -42,6 +45,7 @@ class FeedScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    ContentBloc contentBlocPattern = BlocInheritedClass.of(context).contentBloc;
     return ListView.builder(
       itemBuilder: (context, index) {
         return Padding(

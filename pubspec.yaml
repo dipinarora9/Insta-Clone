@@ -15,7 +15,7 @@ dependencies:
   firebase_auth:
   firebase_storage:
   firebase_database:
-#  scoped_model:
+#  image_picker:
 
 dev_dependencies:
   flutter_test:

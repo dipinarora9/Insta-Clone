@@ -88,7 +88,6 @@ class LoginBloc extends Object with Validate implements Disposer {
     try {
       final AuthResult token = await _instance.signInWithEmailAndPassword(
           email: email, password: pass);
-      debugPrint(token.toString());
       Navigator.of(context)
           .push(MaterialPageRoute(builder: (context) => InitialScreen()));
     } catch (e) {

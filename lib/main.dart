@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:insta_clone/bloc/login_bloc.dart';
 import 'package:insta_clone/bloc/content_bloc.dart';
@@ -7,7 +8,6 @@ import 'screens/Notification_Screen.dart';
 import 'screens/Profile_Screen.dart';
 import 'screens/Upload_Screen.dart';
 import 'screens/Search_Screen.dart';
-//import 'package:scoped_model/scoped_model.dart';
 
 void main() {
   final LoginBloc loginBloc = LoginBloc();
@@ -27,21 +27,12 @@ class InstaApp extends StatelessWidget {
       loginBloc: loginBloc,
       contentBloc: contentBloc,
       child: MaterialApp(
-        title: 'Instagram Clone',home: LoginScreen(),
-//        home: ScopedModel<LoginBloc>(
-//          child: LoginScreen(),
-//          model: loginBloc,
-//        ),
+        title: 'Instagram Clone',
+        home: LoginScreen(),
         theme: ThemeData(
             appBarTheme: AppBarTheme(color: Colors.white),
             primaryColor: Color(0xfffafafa)),
         debugShowCheckedModeBanner: false,
-//      routes: <String, WidgetBuilder>{
-//        '/initial': (BuildContext context) => InitialScreen(),
-//        '/login': (BuildContext context) => LoginScreen(),
-//        '/sigup': (BuildContext context) => SignUpScreen(),
-//        '/dm': (BuildContext context) => MessagesScreen(),
-//      },
       ),
     );
   }
