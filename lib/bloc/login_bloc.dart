@@ -4,8 +4,9 @@ import 'package:rxdart/rxdart.dart';
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+//import 'package:scoped_model/scoped_model.dart';
 
-class Bloc extends Object with Validate implements Disposer {
+class LoginBloc extends Object with Validate implements Disposer {
   final _usernameController = BehaviorSubject<String>();
   final _nameController = BehaviorSubject<String>();
   final _passwordController = BehaviorSubject<String>();
@@ -17,85 +18,91 @@ class Bloc extends Object with Validate implements Disposer {
   bool _signUp = false;
   String _uuid = '';
 
+  String get uuid => _uuid;
+
+  bool get signedUp => _signUp;
+
   Function(String) get emailChanged => _emailController.sink.add;
 
   Function(String) get passwordChanged => _passwordController.sink.add;
+
+  Function(String) get usernameChanged => _usernameController.sink.add;
+
+  Function(String) get nameChanged => _nameController.sink.add;
 
   Stream<String> get username =>
       _usernameController.stream.transform(usernameChecker);
 
   Stream<String> get name => _nameController.stream.transform(usernameChecker);
 
-  Stream<String> get bio => _bioController.stream;
-
-  Stream<String> get error => _errorController.stream;
-
-  Stream<String> get url => _urlController.stream;
+//  Stream<String> get bio => _bioController.stream;
+//
+//  Stream<String> get error => _errorController.stream;
+//
+//  Stream<String> get url => _urlController.stream;
 
   Stream<String> get email => _emailController.stream.transform(emailChecker);
 
   Stream<String> get password =>
       _passwordController.stream.transform(passChecker);
 
-  Stream<bool> get addUser =>
-      Observable.combineLatest6(username, email, password, name, bio, url,
-          (u, e, p, n, b, ur) {
-        try {
-          signUp();
-        } catch (e) {
-          _errorController.sink.addError('Error Sigining Up');
-          _signUp = false;
-        }
-        bool v = _signUp;
-        _signUp = false;
-        return v;
-      });
+  Stream<bool> get addUser => Observable.combineLatest4(
+      username, email, password, name, (u, e, p, n) => true);
 
   Stream<bool> get verifiedUser =>
-      Observable.combineLatest2(email, password, (e, p)=>true);
-//
-//  Stream<bool> get verifiedUser =>
-//      Observable.combineLatest2(email, password, (e, p) {
-//        try {
-//          debugPrint('here');
-//          signIn(e, p);
-//        } catch (e) {
-//          _errorController.sink.addError('Error Sigining In');
-//        }
-//        if (_uuid != '')
-//          return true;
-//        else
-//          return false;
-//      });
+      Observable.combineLatest2(email, password, (e, p) => true);
 
   signUp() async {
-    final user = await FirebaseAuth.instance.currentUser();
-    final token = user.uid;
-    DatabaseReference _reference =
-        FirebaseDatabase.instance.reference().child('users').child(token);
+    try {
+      debugPrint('called');
+      debugPrint(_emailController.sink.toString());
+      String e;
+      String p;
+      _passwordController.stream.listen((_) {
+        debugPrint(_);
+      });
 
-    HashMap _hashMap = HashMap.fromEntries([
-      MapEntry('id', token),
-      MapEntry('username', username),
-      MapEntry('name', name),
-      MapEntry('password', password),
-      MapEntry('email', email),
-      MapEntry('bio', bio),
-      MapEntry('url', url),
-    ]);
+      debugPrint('email - $e and password - $p');
+      if (e != '' && p != '' && false) {
+        debugPrint('working');
+        final AuthResult user = await FirebaseAuth.instance
+            .createUserWithEmailAndPassword(email: e, password: p);
+        final token = user.user.uid;
+        DatabaseReference _reference =
+            FirebaseDatabase.instance.reference().child('users').child(token);
 
-    _reference.set(_hashMap).whenComplete(() {
-      _signUp = true;
-    });
+        HashMap _hashMap = HashMap.fromEntries([
+          MapEntry('id', token),
+          MapEntry('username', username),
+          MapEntry('name', name),
+          MapEntry('password', password),
+          MapEntry('email', email),
+          //      MapEntry('bio', bio),
+          //      MapEntry('url', url),
+        ]);
+        debugPrint(token.toString());
+        _reference.set(_hashMap).whenComplete(() {
+          _signUp = true;
+        });
+      }
+    } catch (e) {
+      debugPrint('ERRROROR - $e');
+      _signUp = false;
+    }
   }
 
-  signIn(String email, String password) async {
+  signIn() async {
     final FirebaseAuth _instance = FirebaseAuth.instance;
-    debugPrint('called');
-
-    final AuthResult token = await _instance.signInWithEmailAndPassword(
-        email: email, password: password);
-    _uuid = token.user.uid;
+    try {
+      final AuthResult token = await _instance.signInWithEmailAndPassword(
+          email: _emailController.value, password: _passwordController.value);
+      debugPrint(token.toString());
+      _uuid = token.user.uid;
+      debugPrint(_uuid.toString());
+    } catch (e) {
+      debugPrint('errrrrror');
+      _errorController.sink.addError('Error Sigining In');
+    }
   }
 
   @override
@@ -125,14 +132,12 @@ mixin Validate {
   var usernameChecker = StreamTransformer<String, String>.fromHandlers(
       handleData: (username, sink) async {
     //todo
-    if (true)
-      sink.add(username);
-    else
-      sink.addError('Username already exits');
+
+    sink.add(username);
   });
   var passChecker =
       StreamTransformer<String, String>.fromHandlers(handleData: (pass, sink) {
-    if (pass.length > 8)
+    if (pass.length > 4)
       sink.add(pass);
     else
       sink.addError('Password too short');
