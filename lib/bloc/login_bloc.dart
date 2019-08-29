@@ -1,10 +1,11 @@
 import 'dart:collection';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:insta_clone/main.dart';
 import 'package:rxdart/rxdart.dart';
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
-//import 'package:scoped_model/scoped_model.dart';
 
 class LoginBloc extends Object with Validate implements Disposer {
   final _usernameController = BehaviorSubject<String>();
@@ -37,7 +38,9 @@ class LoginBloc extends Object with Validate implements Disposer {
 
 //  Stream<String> get bio => _bioController.stream;
 //
-//  Stream<String> get error => _errorController.stream;
+  Stream<String> get error =>
+      _errorController.stream.transform(errorAdder);
+
 //
 //  Stream<String> get url => _urlController.stream;
 
@@ -46,59 +49,48 @@ class LoginBloc extends Object with Validate implements Disposer {
   Stream<String> get password =>
       _passwordController.stream.transform(passChecker);
 
-  Stream<bool> get addUser => Observable.combineLatest4(
-      username, email, password, name, (u, e, p, n) => true);
+  Stream<List<String>> get addUser => Observable.combineLatest4(
+      email, password, username, name, (e, p, u, n) => [e, p, u, n]);
 
-  Stream<bool> get verifiedUser =>
-      Observable.combineLatest2(email, password, (e, p) => true);
+  Stream<List<String>> get verifiedUser =>
+      Observable.combineLatest2(email, password, (e, p) => [e, p]);
 
-  signUp() async {
+  signUp(String email, String pass, String username, String name) async {
     try {
-      debugPrint('called');
-      debugPrint(_emailController.sink.toString());
-      String e;
-      String p;
-      _passwordController.stream.listen((_) {
-        debugPrint(_);
+      debugPrint('$email  $pass');
+      final AuthResult user = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(email: email, password: pass);
+      final token = user.user.uid;
+      DatabaseReference _reference =
+          FirebaseDatabase.instance.reference().child('users').child(token);
+
+      HashMap _hashMap = HashMap.fromEntries([
+        MapEntry('id', token),
+        MapEntry('username', username),
+        MapEntry('name', name),
+        MapEntry('password', pass),
+        MapEntry('email', email),
+        //      MapEntry('bio', bio),
+        //      MapEntry('url', url),
+      ]);
+      debugPrint(token.toString());
+      _reference.set(_hashMap).whenComplete(() {
+        _signUp = true;
       });
-
-      debugPrint('email - $e and password - $p');
-      if (e != '' && p != '' && false) {
-        debugPrint('working');
-        final AuthResult user = await FirebaseAuth.instance
-            .createUserWithEmailAndPassword(email: e, password: p);
-        final token = user.user.uid;
-        DatabaseReference _reference =
-            FirebaseDatabase.instance.reference().child('users').child(token);
-
-        HashMap _hashMap = HashMap.fromEntries([
-          MapEntry('id', token),
-          MapEntry('username', username),
-          MapEntry('name', name),
-          MapEntry('password', password),
-          MapEntry('email', email),
-          //      MapEntry('bio', bio),
-          //      MapEntry('url', url),
-        ]);
-        debugPrint(token.toString());
-        _reference.set(_hashMap).whenComplete(() {
-          _signUp = true;
-        });
-      }
     } catch (e) {
       debugPrint('ERRROROR - $e');
       _signUp = false;
     }
   }
 
-  signIn() async {
+  signIn(String email, String pass, context) async {
     final FirebaseAuth _instance = FirebaseAuth.instance;
     try {
       final AuthResult token = await _instance.signInWithEmailAndPassword(
-          email: _emailController.value, password: _passwordController.value);
+          email: email, password: pass);
       debugPrint(token.toString());
-      _uuid = token.user.uid;
-      debugPrint(_uuid.toString());
+      Navigator.of(context)
+          .push(MaterialPageRoute(builder: (context) => InitialScreen()));
     } catch (e) {
       debugPrint('errrrrror');
       _errorController.sink.addError('Error Sigining In');
@@ -137,7 +129,7 @@ mixin Validate {
   });
   var passChecker =
       StreamTransformer<String, String>.fromHandlers(handleData: (pass, sink) {
-    if (pass.length > 4)
+    if (pass.length > 6)
       sink.add(pass);
     else
       sink.addError('Password too short');
@@ -163,5 +155,9 @@ mixin Validate {
       sink.add(bio);
     else
       sink.add('');
+  });
+  var errorAdder =
+      StreamTransformer<String, String>.fromHandlers(handleData: (error, sink) {
+    sink.addError(error);
   });
 }

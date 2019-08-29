@@ -1,8 +1,3 @@
-import 'dart:async';
-import 'dart:collection';
-
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:insta_clone/bloc/login_bloc.dart';
 import 'package:insta_clone/main.dart';
@@ -54,19 +49,18 @@ class LoginScreen extends StatelessWidget {
                       ),
                     );
                   }),
-//              StreamBuilder<String>(
-//                  stream: bloc.error,
-//                  builder: (context, snapshot) {
-//                    if (snapshot.hasData)
-//                      return Padding(
-//                          padding: const EdgeInsets.all(8.0),
-//                          child: Text(snapshot.error));
-//                    else {
-////                      debugPrint(snapshot.data);
-//                      return SizedBox();
-//                    }
-//                  }),
-              StreamBuilder<bool>(
+              StreamBuilder<String>(
+                  stream: bloc.error,
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError)
+                      return Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(snapshot.error));
+                    else {
+                      return SizedBox();
+                    }
+                  }),
+              StreamBuilder<List<String>>(
                 stream: bloc.verifiedUser,
                 builder: (context, snapshot) {
                   return Padding(
@@ -76,10 +70,7 @@ class LoginScreen extends StatelessWidget {
                       color: snapshot.hasData ? Colors.blue : Colors.grey,
                       onPressed: () {
                         if (snapshot.hasData ?? false) {
-                          bloc.signIn();
-                          if (bloc.uuid != '')
-                            Navigator.of(context).push(MaterialPageRoute(
-                                builder: (context) => FeedScreen()));
+                          bloc.signIn(snapshot.data[0],snapshot.data[1],context);
                         }
                       },
                     ),
@@ -210,7 +201,7 @@ class SignUpScreen extends StatelessWidget {
 //                      ),
 //                    );
 //                  }),
-              StreamBuilder<bool>(
+              StreamBuilder<List<String>>(
                 stream: bloc.addUser,
                 builder: (context, snapshot) {
                   return Padding(
@@ -220,7 +211,9 @@ class SignUpScreen extends StatelessWidget {
                       color: snapshot.hasData ? Colors.blue : Colors.grey,
                       onPressed: () {
                         if (snapshot.hasData ?? false) {
-                          debugPrint('yess');bloc.signUp();
+
+                          bloc.signUp(snapshot.data[0], snapshot.data[1], snapshot.data[2], snapshot.data[3]);
+                          if(bloc.signedUp)Navigator.of(context).pop();
 //                          signUp(bloc.email, bloc.password, bloc.username,
 //                              bloc.name, context);
                         }
@@ -234,40 +227,5 @@ class SignUpScreen extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  signUp(Stream<String> email, Stream<String> password, Stream<String> username,
-      Stream<String> name, context) async {
-    try {
-      List<String> d = await Future.wait(
-          [ password.first, username.first, name.first]);
-      debugPrint(d.toString());
-      String e = d[0];
-      String p = d[1];
-      String u = d[2];
-      String n = d[3];
-      debugPrint('egge');
-      AuthResult user = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(email: e, password: p);
-      final token = user.user.uid;
-      DatabaseReference _reference =
-          FirebaseDatabase.instance.reference().child('users').child(token);
-
-      HashMap _hashMap = HashMap.fromEntries([
-        MapEntry('id', token),
-        MapEntry('username', u),
-        MapEntry('name', n),
-        MapEntry('password', p),
-        MapEntry('email', e),
-        //      MapEntry('bio', bio),
-        //      MapEntry('url', url),
-      ]);
-
-      _reference.set(_hashMap).whenComplete(() {
-        Navigator.of(context).pop();
-      });
-    } catch (e) {
-      debugPrint("ERROR - $e");
-    }
   }
 }
