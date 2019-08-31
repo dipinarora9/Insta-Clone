@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:insta_clone/bloc/login_bloc.dart';
 import 'package:insta_clone/main.dart';
-import 'package:insta_clone/screens/FeedScreen.dart';
+import 'package:insta_clone/screens/Feed_Screen.dart';
 
 class LoginScreen extends StatelessWidget {
   @override

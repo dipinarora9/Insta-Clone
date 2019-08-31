@@ -51,24 +51,30 @@ class SearchScreen extends StatelessWidget {
                             onPressed: () {
                               contentBlocPattern.follow(
                                   snapshot.data[0].keys.toList()[index],
-                                  snapshot.data[1].keys.toList().contains(
-                                          snapshot.data[0].keys.toList()[index])
+                                  snapshot.data[1] != null &&
+                                          snapshot.data[1].keys
+                                              .toList()
+                                              .contains(snapshot.data[0].keys
+                                                  .toList()[index])
                                       ? false
                                       : true);
                             },
                             child: Container(
                               child: Padding(
                                 padding: const EdgeInsets.all(8.0),
-                                child: Text(snapshot.data[1].keys
-                                        .toList()
-                                        .contains(snapshot.data[0].keys
-                                            .toList()[index])
-                                    ? 'Following'
+                                child: Text(snapshot.data[1] != null
+                                    ? snapshot.data[1].keys.toList().contains(
+                                            snapshot.data[0].keys
+                                                .toList()[index])
+                                        ? 'Following'
+                                        : 'Follow'
                                     : 'Follow'),
                               ),
-                              color: snapshot.data[1].keys.toList().contains(
-                                      snapshot.data[0].keys.toList()[index])
-                                  ? Colors.red.withOpacity(0.5)
+                              color: snapshot.data[1] != null
+                                  ? snapshot.data[1].keys.toList().contains(
+                                          snapshot.data[0].keys.toList()[index])
+                                      ? Colors.red.withOpacity(0.5)
+                                      : Colors.blue.withOpacity(0.5)
                                   : Colors.blue.withOpacity(0.5),
                             ),
                           ),
@@ -84,6 +90,4 @@ class SearchScreen extends StatelessWidget {
       ),
     );
   }
-
-
 }

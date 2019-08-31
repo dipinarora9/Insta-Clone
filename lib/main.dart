@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:insta_clone/bloc/login_bloc.dart';
 import 'package:insta_clone/bloc/content_bloc.dart';
 import 'screens/Login_Screen.dart';
-import 'screens/FeedScreen.dart';
+import 'screens/Feed_Screen.dart';
 import 'screens/Notification_Screen.dart';
 import 'screens/Profile_Screen.dart';
 import 'screens/Upload_Screen.dart';

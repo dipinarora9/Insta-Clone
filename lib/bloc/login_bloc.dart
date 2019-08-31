@@ -73,7 +73,6 @@ class LoginBloc extends Object with Validate implements Disposer {
         //      MapEntry('bio', bio),
         //      MapEntry('url', url),
       ]);
-      debugPrint(token.toString());
       _reference.set(_hashMap).whenComplete(() {
         _signUp = true;
       });
