@@ -1,6 +1,9 @@
 import 'dart:collection';
+import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:insta_clone/main.dart';
 import 'package:rxdart/rxdart.dart';
 import 'dart:async';
@@ -15,7 +18,7 @@ class LoginBloc extends Object with Validate implements Disposer {
   final _bioController = BehaviorSubject<String>();
   final _urlController = BehaviorSubject<String>();
   final _errorController = BehaviorSubject<String>();
-
+  final _file = BehaviorSubject<File>();
   bool _signUp = false;
   String _uuid = '';
 
@@ -31,31 +34,38 @@ class LoginBloc extends Object with Validate implements Disposer {
 
   Function(String) get nameChanged => _nameController.sink.add;
 
+  Function(String) get bioChanged => _bioController.sink.add;
+
+  Stream<File> get file => _file.stream;
+
   Stream<String> get username =>
       _usernameController.stream.transform(usernameChecker);
 
   Stream<String> get name => _nameController.stream.transform(usernameChecker);
 
-//  Stream<String> get bio => _bioController.stream;
-//
-  Stream<String> get error =>
-      _errorController.stream.transform(errorAdder);
+  Stream<String> get bio => _bioController.stream;
 
-//
-//  Stream<String> get url => _urlController.stream;
+  Stream<String> get error => _errorController.stream.transform(errorAdder);
 
   Stream<String> get email => _emailController.stream.transform(emailChecker);
 
   Stream<String> get password =>
       _passwordController.stream.transform(passChecker);
 
-  Stream<List<String>> get addUser => Observable.combineLatest4(
-      email, password, username, name, (e, p, u, n) => [e, p, u, n]);
+  Stream<List<dynamic>> get addUser => Observable.combineLatest6(
+      email,
+      password,
+      username,
+      name,
+      bio,
+      file,
+      (e, p, u, n, b, f) => [e, p, u, n, b, f]);
 
   Stream<List<String>> get verifiedUser =>
       Observable.combineLatest2(email, password, (e, p) => [e, p]);
 
-  signUp(String email, String pass, String username, String name) async {
+  signUp(String email, String pass, String username, String name, String bio,
+      File file) async {
     try {
       debugPrint('$email  $pass');
       final AuthResult user = await FirebaseAuth.instance
@@ -63,15 +73,25 @@ class LoginBloc extends Object with Validate implements Disposer {
       final token = user.user.uid;
       DatabaseReference _reference =
           FirebaseDatabase.instance.reference().child('users').child(token);
+      StorageReference storageReference = FirebaseStorage.instance
+          .ref()
+          .child('users')
+          .child(DateTime.now().millisecondsSinceEpoch.toString() +
+              '.' +
+              file.path.split('.').last);
 
+      StorageUploadTask storageId = storageReference.putFile(file);
+      StorageTaskSnapshot d = await storageId.onComplete;
+
+      String donwloadUrl = await d.ref.getDownloadURL();
       HashMap _hashMap = HashMap.fromEntries([
         MapEntry('id', token),
         MapEntry('username', username),
         MapEntry('name', name),
         MapEntry('password', pass),
         MapEntry('email', email),
-        //      MapEntry('bio', bio),
-        //      MapEntry('url', url),
+        MapEntry('bio', bio),
+        MapEntry('url', donwloadUrl),
       ]);
       _reference.set(_hashMap).whenComplete(() {
         _signUp = true;
@@ -82,11 +102,15 @@ class LoginBloc extends Object with Validate implements Disposer {
     }
   }
 
+  Future<Null> openImagePicker() async {
+    File pick = await ImagePicker.pickImage(source: ImageSource.gallery);
+    _file.sink.add(pick);
+  }
+
   signIn(String email, String pass, context) async {
     final FirebaseAuth _instance = FirebaseAuth.instance;
     try {
-      final AuthResult token = await _instance.signInWithEmailAndPassword(
-          email: email, password: pass);
+      await _instance.signInWithEmailAndPassword(email: email, password: pass);
       Navigator.of(context)
           .push(MaterialPageRoute(builder: (context) => InitialScreen()));
     } catch (e) {
@@ -104,6 +128,7 @@ class LoginBloc extends Object with Validate implements Disposer {
     _bioController?.close();
     _urlController?.close();
     _errorController?.close();
+    _file?.close();
   }
 }
 

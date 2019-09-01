@@ -1,4 +1,3 @@
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:insta_clone/bloc/content_bloc.dart';
 
@@ -35,11 +34,13 @@ class SearchScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(8.0),
                   child: ListView.builder(
                     shrinkWrap: true,
-                    itemCount: snapshot.hasData ?? false
-                        ? snapshot.data[0].values.toList().length
-                        : 1,
+                    itemCount:
+                        (snapshot.hasData ?? false) && snapshot.data[0] != null
+                            ? snapshot.data[0].values.toList().length
+                            : 1,
                     itemBuilder: (BuildContext context, int index) {
-                      if (snapshot.hasData ?? false)
+                      if ((snapshot.hasData ?? false) &&
+                          snapshot.data[0] != null)
                         return ListTile(
                           title: Text(snapshot.data[0].values
                               .toList()[index]['username']
@@ -79,7 +80,7 @@ class SearchScreen extends StatelessWidget {
                             ),
                           ),
                         );
-                      return Text('No query');
+                      return Center(child: Text('No User Found'));
                     },
                   ),
                 );

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:insta_clone/bloc/login_bloc.dart';
 import 'package:insta_clone/main.dart';
-import 'package:insta_clone/screens/Feed_Screen.dart';
 
 class LoginScreen extends StatelessWidget {
   @override
@@ -94,11 +93,6 @@ class LoginScreen extends StatelessWidget {
       ),
     );
   }
-
-  changeThePage(BuildContext context) {
-    Navigator.of(context)
-        .push(MaterialPageRoute(builder: (context) => FeedScreen()));
-  }
 }
 
 class SignUpScreen extends StatelessWidget {
@@ -174,35 +168,39 @@ class SignUpScreen extends StatelessWidget {
                       ),
                     );
                   }),
-//              StreamBuilder<String>(
-//                  stream: bloc.bio,
-//                  builder: (context, snapshot) {
-//                    return Padding(
-//                      padding: const EdgeInsets.all(8.0),
-//                      child: TextField(
-//                        decoration: InputDecoration(
-//                          labelText: 'bio',
-//                          errorText: snapshot.error,
-//                        ),
-//                        onChanged: bloc.emailChanged,
-//                      ),
-//                    );
-//                  }),
-//              StreamBuilder<String>(
-//                  stream: bloc.url,
-//                  builder: (context, snapshot) {
-//                    return Padding(
-//                      padding: const EdgeInsets.all(8.0),
-//                      child: TextField(
-//                        decoration: InputDecoration(
-//                          labelText: 'image',
-//                          errorText: snapshot.error,
-//                        ),
-//                        onChanged: bloc.emailChanged,
-//                      ),
-//                    );
-//                  }),
-              StreamBuilder<List<String>>(
+              StreamBuilder<String>(
+                  stream: bloc.bio,
+                  builder: (context, snapshot) {
+                    return Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: TextField(
+                        decoration: InputDecoration(
+                          labelText: 'bio',
+                          errorText: snapshot.error,
+                        ),
+                        onChanged: bloc.bioChanged,
+                      ),
+                    );
+                  }),
+              InkWell(
+                onTap: () {
+                  bloc.openImagePicker();
+                },
+                child: Container(
+                  height: 50,
+                  child: Padding(
+                    padding: const EdgeInsets.all(15.0),
+                    child: Text(
+                      "Choose Image",
+                      style: TextStyle(
+                        fontFamily: "Questrial",
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              StreamBuilder<List<dynamic>>(
                 stream: bloc.addUser,
                 builder: (context, snapshot) {
                   return Padding(
@@ -212,11 +210,14 @@ class SignUpScreen extends StatelessWidget {
                       color: snapshot.hasData ? Colors.blue : Colors.grey,
                       onPressed: () {
                         if (snapshot.hasData ?? false) {
-                          bloc.signUp(snapshot.data[0], snapshot.data[1],
-                              snapshot.data[2], snapshot.data[3]);
+                          bloc.signUp(
+                              snapshot.data[0],
+                              snapshot.data[1],
+                              snapshot.data[2],
+                              snapshot.data[3],
+                              snapshot.data[4],
+                              snapshot.data[5]);
                           Navigator.of(context).pop();
-//                          signUp(bloc.email, bloc.password, bloc.username,
-//                              bloc.name, context);
                         }
                       },
                     ),

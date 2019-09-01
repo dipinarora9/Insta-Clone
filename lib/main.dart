@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:insta_clone/bloc/login_bloc.dart';
 import 'package:insta_clone/bloc/content_bloc.dart';
@@ -48,6 +47,7 @@ class _InitialScreenState extends State<InitialScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ContentBloc contentBlocPattern = BlocInheritedClass.of(context).contentBloc;
     return Scaffold(
       appBar: _pageIndex == 0
           ? AppBar(
@@ -57,7 +57,7 @@ class _InitialScreenState extends State<InitialScreen> {
               title: Image.asset('assets/insta.png'),
             )
           : null,
-      body: pageToShow(),
+      body: pageToShow(contentBlocPattern),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _pageIndex,
         onTap: (index) {
@@ -118,7 +118,7 @@ class _InitialScreenState extends State<InitialScreen> {
     );
   }
 
-  Widget pageToShow() {
+  Widget pageToShow(ContentBloc bloc) {
     switch (_pageIndex) {
       case 1:
         return SearchScreen();
@@ -130,9 +130,11 @@ class _InitialScreenState extends State<InitialScreen> {
         return NotificationScreen();
         break;
       case 4:
+        bloc.profileData();
         return ProfileScreen();
         break;
       default:
+        bloc.getFeed();
         return FeedScreen();
     }
   }
