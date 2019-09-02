@@ -21,11 +21,15 @@ class Post {
     this._description = map['description'].toString();
   }
 }
+
 class User {
   String _username;
   String _name;
   String _bio;
   String _url;
+  String _id;
+
+  String get id => this._id ?? '';
 
   String get username => this._username ?? '';
 
@@ -37,6 +41,7 @@ class User {
 
   User.fromMap(Map<dynamic, dynamic> map) {
     this._username = map['username'].toString();
+    this._id = map['id'].toString();
     this._name = map['name'].toString();
     this._bio = map['bio'].toString();
     this._url = map['url'].toString();

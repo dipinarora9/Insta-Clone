@@ -1,11 +1,9 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
-import 'package:flutter/rendering.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'classes.dart';
@@ -20,17 +18,29 @@ class ContentBloc implements Disposer {
   final _currentUser = BehaviorSubject<User>();
   final _likeList = BehaviorSubject<List<bool>>();
   final _likes = BehaviorSubject<List<int>>();
-  final _userDatas = BehaviorSubject<Map<dynamic, dynamic>>();
+  final _followers = BehaviorSubject<List<dynamic>>();
+  final _following = BehaviorSubject<List<dynamic>>();
+  final _listData = BehaviorSubject<Map<dynamic, dynamic>>();
+  final _userDatas = BehaviorSubject<List<Map<dynamic, dynamic>>>();
+  final _currentUserposts = BehaviorSubject<Map<dynamic, dynamic>>();
+  final _hide = BehaviorSubject<bool>();
 
   Stream<Map<dynamic, dynamic>> get users => _usersController.stream;
 
   Stream<List<dynamic>> get feed => _feedData.stream;
 
+  Stream<bool> get hide => _hide.stream;
+
   Stream<User> get currentUser => _currentUser.stream;
 
   Function(String) get descriptionChanged => _description.sink.add;
 
+  Function(bool) get hider => _hide.sink.add;
+
   Stream<Map<dynamic, dynamic>> get follower => _followController.stream;
+
+  Stream<Map<dynamic, dynamic>> get currentUserPosts =>
+      _currentUserposts.stream;
 
   Stream<String> get query => _queryController.stream;
 
@@ -38,11 +48,27 @@ class ContentBloc implements Disposer {
 
   Stream<List<bool>> get liked => _likeList.stream;
 
+  Stream<List<dynamic>> get followers => _followers.stream;
+
+  Stream<List<dynamic>> get following => _following.stream;
+
+  Stream<Map<dynamic, dynamic>> get listData => _listData.stream;
+
   Stream<List<int>> get likes => _likes.stream;
 
-  Stream<Map<dynamic, dynamic>> get userData => _userDatas.stream;
+  Stream<List<Map<dynamic, dynamic>>> get userData => _userDatas.stream;
 
   Stream<File> get file => _file.stream;
+
+  Stream<List<dynamic>> get listWithFollowDat =>
+      Observable.combineLatest2(listData, follower, (l, f) => [l, f]);
+
+  Stream<List<dynamic>> get profileScreenData => Observable.combineLatest4(
+      currentUser,
+      currentUserPosts,
+      followers,
+      following,
+      (u, p, fr, fg) => [u, p, fr, fg]);
 
   Stream<List<dynamic>> get feedWithUserData => Observable.combineLatest4(
       feed, userData, likes, liked, (f, u, l, ll) => [f, u, l, ll]);
@@ -53,10 +79,11 @@ class ContentBloc implements Disposer {
   Stream<List<dynamic>> get fetchedData =>
       Observable.combineLatest2(users, follower, (u, f) => [u, f]);
 
-  follow(String id, bool follow) async {
+  follow(String id, bool follow, {bool add}) async {
     final FirebaseUser user = await FirebaseAuth.instance.currentUser();
     final token = user.uid;
-    if (follow)
+    if (add != null) _hide.add(follow);
+    if (follow) {
       FirebaseDatabase.instance
           .reference()
           .child('follow')
@@ -64,7 +91,14 @@ class ContentBloc implements Disposer {
           .child('following')
           .child(id)
           .set(follow);
-    else
+      FirebaseDatabase.instance
+          .reference()
+          .child('follow')
+          .child(id)
+          .child('followers')
+          .child(token)
+          .set(follow);
+    } else {
       FirebaseDatabase.instance
           .reference()
           .child('follow')
@@ -72,6 +106,14 @@ class ContentBloc implements Disposer {
           .child('following')
           .child(id)
           .remove();
+      FirebaseDatabase.instance
+          .reference()
+          .child('follow')
+          .child(id)
+          .child('followers')
+          .child(token)
+          .remove();
+    }
   }
 
   followerChecker() async {
@@ -90,7 +132,7 @@ class ContentBloc implements Disposer {
   likePost(String postId, bool like) async {
     final FirebaseUser user = await FirebaseAuth.instance.currentUser();
     final token = user.uid;
-    debugPrint(postId);
+
     if (like)
       FirebaseDatabase.instance
           .reference()
@@ -122,23 +164,70 @@ class ContentBloc implements Disposer {
         keys.forEach((k) {
           feed.remove(k);
         });
-        getPosts(feed.values.toList());
+        getFeedPosts(feed.values.toList());
       } else
         feed = {};
       _feedData.add(feed.values.toList());
     });
   }
 
-  profileData() async {
+  profileData({String uid}) async {
     final FirebaseUser user = await FirebaseAuth.instance.currentUser();
-    Query _reference =
-        FirebaseDatabase.instance.reference().child('users').child(user.uid);
+    Query _reference = FirebaseDatabase.instance
+        .reference()
+        .child('users')
+        .child(uid != null ? uid : user.uid);
     _reference.onValue.listen((data) {
       _currentUser.add(User.fromMap(data.snapshot.value));
     });
+    getProfilePosts(uid: uid);
+    getFollowers(uid: uid);
+    getFollowing(uid: uid);
   }
 
-  getPosts(List<dynamic> mapData) async {
+  getProfilePosts({String uid}) async {
+    final FirebaseUser user = await FirebaseAuth.instance.currentUser();
+    final String currentUserID = uid != null ? uid : user.uid;
+    DatabaseReference _reference =
+        FirebaseDatabase.instance.reference().child('posts');
+
+    DataSnapshot d = await _reference.once();
+    Map<dynamic, dynamic> posts = d.value;
+
+    posts.removeWhere((k, v) => v['publisher'] != currentUserID);
+    _currentUserposts.add(posts);
+  }
+
+  getFollowers({String uid}) async {
+    final FirebaseUser user = await FirebaseAuth.instance.currentUser();
+    final String currentUserID = uid != null ? uid : user.uid;
+    DatabaseReference _reference = FirebaseDatabase.instance
+        .reference()
+        .child('follow')
+        .child(currentUserID)
+        .child('followers');
+    _reference.onValue.listen((data) {
+      _followers.add(
+          data.snapshot.value != null ? data.snapshot.value.keys.toList() : []);
+    });
+  }
+
+  getFollowing({String uid}) async {
+    final FirebaseUser user = await FirebaseAuth.instance.currentUser();
+    final String currentUserID = uid != null ? uid : user.uid;
+    DatabaseReference _reference = FirebaseDatabase.instance
+        .reference()
+        .child('follow')
+        .child(currentUserID)
+        .child('following');
+
+    _reference.onValue.listen((data) {
+      _following.add(
+          data.snapshot.value != null ? data.snapshot.value.keys.toList() : []);
+    });
+  }
+
+  getFeedPosts(List<dynamic> mapData) async {
     List<String> user = [];
     List<String> ids = [];
     DatabaseReference _reference =
@@ -149,9 +238,11 @@ class ContentBloc implements Disposer {
     });
     DataSnapshot d = await _reference.once();
     Map<dynamic, dynamic> users = d.value;
-
-    users.removeWhere((k, v) => !user.contains(k));
-    _userDatas.add(users);
+    List<Map<dynamic, dynamic>> postUsers = [];
+    user.forEach((userId) {
+      postUsers.add(users[userId]);
+    });
+    _userDatas.add(postUsers);
     getLikes(ids);
   }
 
@@ -165,7 +256,6 @@ class ContentBloc implements Disposer {
         FirebaseDatabase.instance.reference().child('likes');
     DataSnapshot dataa = await _reference.once();
     Map<dynamic, dynamic> likesData = dataa.value;
-    debugPrint('data  -  $likesData');
 
     ids.forEach((id) {
       if (likesData.containsKey(id)) {
@@ -183,17 +273,32 @@ class ContentBloc implements Disposer {
     _likeList.add(liked);
   }
 
-  search(String query) {
+  getUsersData(List<dynamic> id) async {
+    DatabaseReference _reference =
+        FirebaseDatabase.instance.reference().child('users');
+    DataSnapshot d = await _reference.once();
+
+    Map<dynamic, dynamic> users = d.value;
+
+    users.removeWhere((k, v) => !id.contains(k));
+    _listData.add(users);
+  }
+
+  search(String query) async {
+    final FirebaseUser user = await FirebaseAuth.instance.currentUser();
+    final String id = user.uid;
     Query _reference = FirebaseDatabase.instance
         .reference()
         .child('users')
         .orderByChild('username')
         .startAt(query)
         .endAt(query + "\uf8ff");
-    _reference.onValue.listen((data) {
-      followerChecker();
-      _usersController.add(data.snapshot.value);
-    });
+    DataSnapshot d = await _reference.once();
+
+    Map<dynamic, dynamic> results = d.value;
+    results.remove(id);
+    followerChecker();
+    _usersController.add(results);
   }
 
   Future<Null> openImagePicker() async {
@@ -237,6 +342,11 @@ class ContentBloc implements Disposer {
     _currentUser?.drain();
     _likes?.drain();
     _userDatas?.drain();
+    _currentUserposts?.close();
+    _following?.close();
+    _followers?.close();
+    _listData?.close();
+    _hide?.close();
   }
 }
 

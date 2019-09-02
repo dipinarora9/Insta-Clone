@@ -11,9 +11,9 @@ class FeedScreen extends StatelessWidget {
     return StreamBuilder<List<dynamic>>(
       stream: contentBlocPattern.feedWithUserData,
       builder: (context, snapshot) {
-        return ListView.builder(
-          itemBuilder: (context, index) {
-            if (snapshot.hasData ?? false)
+        if ((snapshot.hasData ?? false) && snapshot.data[0].length > 0)
+          return ListView.builder(
+            itemBuilder: (context, index) {
               return Padding(
                 padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
                 child: Column(
@@ -24,9 +24,11 @@ class FeedScreen extends StatelessWidget {
                       children: <Widget>[
                         CircleAvatar(
                           child: (snapshot.hasData ?? false) &&
-                                  snapshot.data != null
-                              ? Image.network(snapshot.data[1].values
-                                  .toList()[index]['url'])
+                                  snapshot.data != null &&
+                                  snapshot.data[1] != null
+                              ? Image.network(snapshot.data[1].length >= index
+                                  ? snapshot.data[1][index]['url']
+                                  : noPic)
                               : Text(
                                   '',
                                   textScaleFactor: 0,
@@ -34,11 +36,11 @@ class FeedScreen extends StatelessWidget {
                           radius: 20,
                           backgroundColor: Colors.white,
                         ),
-                        Text(
-                            (snapshot.hasData ?? false) && snapshot.data != null
-                                ? snapshot.data[1].values.toList()[index]
-                                    ['username']
-                                : ''),
+                        Text((snapshot.hasData ?? false) &&
+                                snapshot.data != null &&
+                                snapshot.data[1] != null
+                            ? snapshot.data[1][index]['username']
+                            : ''),
                         Spacer(),
                         Icon(Icons.menu)
                       ],
@@ -70,6 +72,8 @@ class FeedScreen extends StatelessWidget {
                                 FontAwesomeIcons.heart,
                                 color: (snapshot.hasData ?? false) &&
                                         snapshot.data != null &&
+                                        snapshot.data[3] != null &&
+                                        snapshot.data[3].length >= index &&
                                         snapshot.data[3][index]
                                     ? Colors.red
                                     : Colors.grey,
@@ -114,8 +118,7 @@ class FeedScreen extends StatelessWidget {
                             child: Text(
                               (snapshot.hasData ?? false) &&
                                       snapshot.data != null
-                                  ? snapshot.data[1].values.toList()[index]
-                                      ['username']
+                                  ? snapshot.data[1][index]['username']
                                   : '',
                               textScaleFactor: 0.7,
                               style: TextStyle(fontWeight: FontWeight.bold),
@@ -147,13 +150,25 @@ class FeedScreen extends StatelessWidget {
                   ],
                 ),
               );
-
-            return Center(
-              child: CircularProgressIndicator(),
-            );
-          },
-          itemCount: snapshot.hasData ?? false ? snapshot.data[0].length : 0,
-        );
+            },
+            itemCount: snapshot.hasData ?? false ? snapshot.data[0].length : 0,
+          );
+        else if ((snapshot.hasData ?? true) &&
+            (snapshot.data == null || snapshot.data[0].length == 0))
+          return Container(
+            height: MediaQuery.of(context).size.height,
+            child: Center(
+              child: Text('No user followed or no posts found'),
+            ),
+          );
+        else {
+          return Container(
+            height: MediaQuery.of(context).size.height,
+            child: Center(
+              child: Text('Feed loading'),
+            ),
+          );
+        }
       },
     );
   }

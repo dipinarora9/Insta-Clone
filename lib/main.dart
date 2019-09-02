@@ -61,6 +61,7 @@ class _InitialScreenState extends State<InitialScreen> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _pageIndex,
         onTap: (index) {
+          if (index == 4) contentBlocPattern.profileData();
           setState(() {
             _pageIndex = index;
           });
@@ -130,7 +131,6 @@ class _InitialScreenState extends State<InitialScreen> {
         return NotificationScreen();
         break;
       case 4:
-        bloc.profileData();
         return ProfileScreen();
         break;
       default:
